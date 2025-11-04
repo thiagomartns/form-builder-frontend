@@ -1,49 +1,26 @@
 "use client";
-import { AppShell, Burger, Button, Group, Tooltip } from "@mantine/core";
+import { AppShell, Burger, Button, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Heading, Mail, Phone, User } from "lucide-react";
-import { useDraggable } from "@dnd-kit/core";
+
+import useFieldActions from "@/hooks/useFieldActions";
+import { DraggableButton } from "../draggable-button";
 
 interface CollapseDesktopProps {
   children?: React.ReactNode;
 }
 
-type MainLink = {
+export type MainLink = {
   icon: React.ReactNode;
   label: string;
   type: string;
 };
 
-function DraggableButton({ link }: { link: MainLink }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: link.type,
-    data: link,
-  });
-
-  return (
-    <Tooltip
-      label={link.label}
-      position="right"
-      withArrow
-      transitionProps={{ duration: 0 }}
-    >
-      <Button
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
-        leftSection={link.icon}
-        className={isDragging ? "opacity-50" : ""}
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
-      >
-        {link.label}
-      </Button>
-    </Tooltip>
-  );
-}
-
 export function CollapseDesktop({ children }: CollapseDesktopProps) {
   const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+
+  const { fields, removeAllFields, addField } = useFieldActions();
 
   const mainLinksMockdata: MainLink[] = [
     { icon: <Heading />, label: "Title", type: "title" },
@@ -81,8 +58,15 @@ export function CollapseDesktop({ children }: CollapseDesktopProps) {
       </AppShell.Header>
       <AppShell.Navbar className="space-y-2 px-4">
         {mainLinksMockdata.map((link) => (
-          <DraggableButton key={link.type} link={link} />
+          <DraggableButton key={link.type} onAdd={addField} link={link} />
         ))}
+        <Button
+          disabled={fields.length === 0}
+          onClick={removeAllFields}
+          color="red"
+        >
+          Remove all fields
+        </Button>
       </AppShell.Navbar>
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>

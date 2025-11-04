@@ -9,8 +9,8 @@ export const NameBlock = ({ id }: NameBlockProps) => {
   return (
     <Block id={id}>
       <div className="flex justify-between gap-4">
-        <TextInput readOnly label="First Name" className="w-full" />
-        <TextInput readOnly label="Last Name" className="w-full" />
+        <TextInput disabled label="First Name" className="w-full" />
+        <TextInput disabled label="Last Name" className="w-full" />
       </div>
     </Block>
   );

@@ -11,6 +11,8 @@ export default function useFieldActions() {
 
   const reorderFields = useFormBuilderStore((state) => state.reorderFields);
 
+  const removeAllFields = useFormBuilderStore((state) => state.removeAllFields);
+
   return {
     removeField,
     selectField,
@@ -18,5 +20,6 @@ export default function useFieldActions() {
     reorderFields,
     fields,
     addField,
+    removeAllFields,
   };
 }

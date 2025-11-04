@@ -1,13 +1,21 @@
+// useFormBuilderStore.ts
 import { FieldType, FormField } from "@/models";
 import { create } from "zustand";
+import { arrayMove } from "@dnd-kit/sortable"; // Adicione essa dependência
 
 interface FormBuilderStore {
   fields: FormField[];
   selectedField: string | null;
   addField: (fieldType: FieldType, label: string) => void;
+  addFieldAtPosition: (
+    fieldType: FieldType,
+    label: string,
+    position: number,
+  ) => void; // NOVO
   removeField: (fieldId: string) => void;
   selectField: (fieldId: string) => void;
-  reorderFields: (oldIndex: number, newIndex: number) => void;
+  reorderFields: (activeId: string, overId: string) => void; // NOVO
+  removeAllFields: () => void; // NOVO
 }
 
 const getFieldDefaults = (
@@ -15,22 +23,10 @@ const getFieldDefaults = (
   label: string,
 ): Omit<FormField, "id"> => {
   const defaults: Record<FieldType, Omit<FormField, "id">> = {
-    title: {
-      type: "title",
-      label,
-    },
-    name: {
-      type: "name",
-      label,
-    },
-    email: {
-      type: "email",
-      label,
-    },
-    telephone: {
-      type: "telephone",
-      label,
-    },
+    title: { type: "title", label },
+    name: { type: "name", label },
+    email: { type: "email", label },
+    telephone: { type: "telephone", label },
   };
 
   return defaults[type];
@@ -38,18 +34,31 @@ const getFieldDefaults = (
 
 export const useFormBuilderStore = create<FormBuilderStore>((set) => ({
   fields: [],
-
   selectedField: null,
 
   addField: (fieldType, label) => {
     const newField: FormField = {
-      id: new Date().getTime().toString(),
+      id: crypto.randomUUID(),
       ...getFieldDefaults(fieldType, label),
     };
 
     set((state) => ({
       fields: [...state.fields, newField],
     }));
+  },
+
+  // NOVO: Adicionar em posição específica
+  addFieldAtPosition: (fieldType, label, position) => {
+    const newField: FormField = {
+      id: crypto.randomUUID(),
+      ...getFieldDefaults(fieldType, label),
+    };
+
+    set((state) => {
+      const newFields = [...state.fields];
+      newFields.splice(position, 0, newField);
+      return { fields: newFields };
+    });
   },
 
   removeField: (fieldId) => {
@@ -62,13 +71,18 @@ export const useFormBuilderStore = create<FormBuilderStore>((set) => ({
     set({ selectedField: fieldId });
   },
 
-  reorderFields: (oldIndex, newIndex) => {
+  // NOVO: Reordenar campos
+  reorderFields: (activeId, overId) => {
     set((state) => {
-      const newFields = [...state.fields];
-      const [removed] = newFields.splice(oldIndex, 1);
-      newFields.splice(newIndex, 0, removed);
+      const oldIndex = state.fields.findIndex((f) => f.id === activeId);
+      const newIndex = state.fields.findIndex((f) => f.id === overId);
 
-      return { fields: newFields };
+      return {
+        fields: arrayMove(state.fields, oldIndex, newIndex),
+      };
     });
+  },
+  removeAllFields: () => {
+    set({ fields: [] });
   },
 }));
