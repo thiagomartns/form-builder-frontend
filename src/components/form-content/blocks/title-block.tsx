@@ -7,7 +7,7 @@ interface TitleBlockProps {
 
 export const TitleBlock = ({ id }: TitleBlockProps) => {
   return (
-    <Block id={id}>
+    <Block id={id} fieldType="title">
       <TextInput
         placeholder="Insira um cabeçalho"
         variant="unstyled"
@@ -21,3 +21,5 @@ export const TitleBlock = ({ id }: TitleBlockProps) => {
     </Block>
   );
 };
+
+// Mesmo para NameBlock, EmailBlock, PhoneBlock

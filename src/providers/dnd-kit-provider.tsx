@@ -5,7 +5,9 @@ import {
   DragStartEvent,
   DragOverlay,
   DragEndEvent,
-  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  CollisionDetection,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -28,92 +30,98 @@ const FIELD_ICONS: Record<FieldType, React.ReactNode> = {
   telephone: <Phone />,
 };
 
+// Collision detection melhorada (similar ao exemplo oficial)
+const customCollisionDetection: CollisionDetection = (args) => {
+  // Primeiro tenta encontrar colisão com o pointer
+  const pointerCollisions = pointerWithin(args);
+
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+
+  // Fallback para intersecção de retângulos
+  return rectIntersection(args);
+};
+
 export function DndProvider({ children }: DndProviderProps) {
   const { fields, addField, addFieldAtPosition, reorderFields } =
     useFormBuilderStore();
 
-  const [activeItem, setActiveItem] = useState<{
-    id: string;
-    fieldType: FieldType;
-    label: string;
-    isExistingField: boolean;
-  } | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const data = active.data.current;
-
-    const isExistingField = fields.some((f) => f.id === active.id);
-
-    if (isExistingField) {
-      const field = fields.find((f) => f.id === active.id);
-      setActiveItem({
-        id: active.id as string,
-        fieldType: field!.type,
-        label: field!.label,
-        isExistingField: true,
-      });
-    } else {
-      setActiveItem({
-        id: active.id as string,
-        fieldType: data?.type,
-        label: data?.label,
-        isExistingField: false,
-      });
-    }
+    setActiveId(event.active.id as string);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!activeItem) {
-      setActiveItem(null);
-      return;
-    }
+    setActiveId(null);
 
-    // CASO 1: Reordenação de campo existente
-    if (activeItem.isExistingField) {
-      if (over && active.id !== over.id) {
-        reorderFields(active.id as string, over.id as string);
-      }
-    }
-    // CASO 2: Novo campo da sidebar
-    else {
-      if (!over) {
-        setActiveItem(null);
+    if (!over) return;
+
+    const activeData = active.data.current;
+    const isNewField = !activeData?.type || activeData.type !== "field";
+
+    // CASO 1: Novo campo da sidebar
+    if (isNewField) {
+      // Drop no canvas vazio
+      if (over.id === "form-canvas") {
+        addField(
+          activeData?.type || (active.id as FieldType),
+          activeData?.label,
+        );
         return;
       }
 
-      if (over.id === "form-canvas") {
-        addField(activeItem.fieldType, activeItem.label);
-      } else {
-        const overIndex = fields.findIndex((f) => f.id === over.id);
-
-        if (overIndex !== -1) {
-          addFieldAtPosition(
-            activeItem.fieldType,
-            activeItem.label,
-            overIndex + 1,
-          );
-        } else {
-          addField(activeItem.fieldType, activeItem.label);
-        }
+      // Drop sobre um campo existente (inserir antes/depois)
+      const overIndex = fields.findIndex((f) => f.id === over.id);
+      if (overIndex !== -1) {
+        addFieldAtPosition(
+          activeData?.type || (active.id as FieldType),
+          activeData?.label,
+          overIndex,
+        );
       }
+      return;
     }
 
-    setActiveItem(null);
+    // CASO 2: Reordenação de campo existente
+    if (active.id !== over.id) {
+      reorderFields(active.id as string, over.id as string);
+    }
   };
 
-  const handleDragCancel = () => {
-    setActiveItem(null);
+  // Buscar dados do item ativo
+  const getActiveItemData = () => {
+    if (!activeId) return null;
+
+    // É um campo existente?
+    const existingField = fields.find((f) => f.id === activeId);
+    if (existingField) {
+      return {
+        type: existingField.type,
+        label: existingField.label,
+        isExisting: true,
+      };
+    }
+
+    // É um botão da sidebar?
+    return {
+      type: activeId as FieldType,
+      label: activeId,
+      isExisting: false,
+    };
   };
+
+  const activeData = getActiveItemData();
 
   return (
     <DndContext
-      collisionDetection={closestCenter}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
+      onDragCancel={() => setActiveId(null)}
     >
       <SortableContext
         items={fields.map((f) => f.id)}
@@ -123,15 +131,17 @@ export function DndProvider({ children }: DndProviderProps) {
       </SortableContext>
 
       <DragOverlay>
-        {activeItem ? (
+        {activeData && !activeData.isExisting && (
           <Button
-            leftSection={FIELD_ICONS[activeItem.fieldType]}
+            leftSection={FIELD_ICONS[activeData.type]}
             className="opacity-80 shadow-xl cursor-grabbing"
-            fullWidth
+            style={{
+              width: activeData.isExisting ? "100%" : "auto",
+            }}
           >
-            {activeItem.label}
+            {activeData.label}
           </Button>
-        ) : null}
+        )}
       </DragOverlay>
     </DndContext>
   );

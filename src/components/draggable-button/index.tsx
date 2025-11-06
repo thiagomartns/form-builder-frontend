@@ -7,11 +7,13 @@ interface DraggableButtonProps {
   link: MainLink;
   onAdd?: (type: FieldType, label: string) => void;
 }
-
 export function DraggableButton({ link, onAdd }: DraggableButtonProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: link.type,
-    data: link,
+    data: {
+      type: link.type, // Consistente com o resto
+      label: link.label,
+    },
   });
 
   const handleClick = () => {
@@ -21,12 +23,7 @@ export function DraggableButton({ link, onAdd }: DraggableButtonProps) {
   };
 
   return (
-    <Tooltip
-      label={link.label}
-      position="right"
-      withArrow
-      transitionProps={{ duration: 0 }}
-    >
+    <Tooltip label={link.label} position="right" withArrow>
       <Button
         ref={setNodeRef}
         {...listeners}

@@ -7,7 +7,7 @@ interface EmailBlockProps {
 
 export const EmailBlock = ({ id }: EmailBlockProps) => {
   return (
-    <Block id={id}>
+    <Block id={id} fieldType="email">
       <TextInput label="Email Address" className="w-full" />
     </Block>
   );

@@ -7,7 +7,7 @@ interface PhoneBlockProps {
 
 export const PhoneBlock = ({ id }: PhoneBlockProps) => {
   return (
-    <Block id={id}>
+    <Block fieldType="phone" id={id}>
       <TextInput label="Phone Number" className="w-full" />
     </Block>
   );

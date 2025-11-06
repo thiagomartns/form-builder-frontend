@@ -8,10 +8,15 @@ import { EmailBlock } from "./blocks/email-block";
 import { PhoneBlock } from "./blocks/phone-block";
 import useFieldActions from "@/hooks/useFieldActions";
 import { FormField } from "@/models";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 export default function FormContent() {
   const { setNodeRef, isOver } = useDroppable({
     id: "form-canvas",
+    data: { type: "canvas" },
   });
 
   const { fields } = useFieldActions();
@@ -32,19 +37,24 @@ export default function FormContent() {
   };
 
   return (
-    <Card className="shadow-2xl " ref={setNodeRef}>
+    <Card className="shadow-2xl" ref={setNodeRef}>
       <Card.Section
         className={`p-4 px-12 min-h-[400px] ${isOver ? "bg-blue-50" : ""}`}
       >
-        {fields.length === 0 && (
+        {fields.length === 0 ? (
           <div className="text-center text-gray-400 min-h-[200px] flex items-center justify-center">
             {isOver
               ? "Solte aqui para adicionar o campo"
               : "Arraste campos da sidebar para começar"}
           </div>
+        ) : (
+          <SortableContext
+            items={fields.map((f) => f.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">{fields.map(renderField)}</div>
+          </SortableContext>
         )}
-
-        <div className="space-y-2">{fields.map(renderField)}</div>
       </Card.Section>
     </Card>
   );

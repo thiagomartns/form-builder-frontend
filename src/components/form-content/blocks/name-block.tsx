@@ -7,10 +7,10 @@ interface NameBlockProps {
 
 export const NameBlock = ({ id }: NameBlockProps) => {
   return (
-    <Block id={id}>
+    <Block id={id} fieldType="name">
       <div className="flex justify-between gap-4">
-        <TextInput disabled label="First Name" className="w-full" />
-        <TextInput disabled label="Last Name" className="w-full" />
+        <TextInput w-full disabled label="First Name" className="w-full" />
+        <TextInput w-full disabled label="Last Name" className="w-full" />
       </div>
     </Block>
   );
